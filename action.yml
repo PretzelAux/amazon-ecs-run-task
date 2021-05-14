@@ -13,6 +13,12 @@ inputs:
   count:
     description: "The count of tasks to run. Will default to the 1"
     required: true
+  subnets:
+    description: "The subnets to allow this task to run in. Values should be comma separated without spaces"
+    required: true
+  security-groups:
+    description: "The security groups this task should run with. Values should be comma separated without spaces"
+    required: true
   started-by:
     description: "The value of the task started-by"
     required: false
