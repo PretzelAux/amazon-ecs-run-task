@@ -132,6 +132,7 @@ async function run() {
       launchType: 'FARGATE',
       networkConfiguration: {
         awsvpcConfiguration: {
+          assignPublicIp: 'ENABLED',
           subnets: subnets.split(','),
           securityGroups: securityGroups.split(',')
         }
