@@ -129,6 +129,7 @@ async function run() {
     const runTaskResponse = await ecs.runTask({
       cluster: clusterName,
       taskDefinition: taskDefArn,
+      launchType: 'FARGATE',
       networkConfiguration: {
         awsvpcConfiguration: {
           subnets: subnets.split(','),
