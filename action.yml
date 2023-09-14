@@ -34,5 +34,5 @@ outputs:
   task-arn:
     description: 'The ARN of the ECS task'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'

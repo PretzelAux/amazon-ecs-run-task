@@ -18,7 +18,7 @@ jobs:
       run: |
         npm ci
         npm test
-        npm run package
+        NODE_OPTIONS=--openssl-legacy-provider npm run package
     - name: Commit
       run: |
         git config --global user.name "GitHub Actions"
