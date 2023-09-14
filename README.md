@@ -21,12 +21,26 @@ Runs an Amazon ECS task on ECS cluster.
 
 ```yaml
     - name: Run Task on Amazon ECS
-      uses: smitp/amazon-ecs-run-task@v1
+      uses: songtradr/amazon-ecs-run-task@v2
       with:
         task-definition: task-definition.json
         cluster: my-cluster
         count: 1
         started-by: github-actions-${{ github.actor }}
+        wait-for-finish: true
+```
+
+This version of `amazon-ecs-run-task` can also run tasks using an existing ECS service as a template. When run this way, a `command-override` may be specified, which will run this command instead of the one specified in the task definition for the service:
+
+```yaml
+    - name: Run Task on Amazon ECS
+      uses: songtradr/amazon-ecs-run-task@v2
+      with:
+        run-like-service: 'some-service'
+        container-name: 'some-service'
+        command-override: 'rake db:migrate'
+        cluster: my-cluster
+        count: 1
         wait-for-finish: true
 ```
 
@@ -94,7 +108,7 @@ The task definition file can be updated prior to deployment with the new contain
         image: ${{ steps.build-image.outputs.image }}
 
     - name: Run Task on Amazon ECS
-      uses: smitp/amazon-ecs-run-task@v1
+      uses: songtradr/amazon-ecs-run-task@v1
       with:
         task-definition: task-definition.json
         cluster: my-cluster

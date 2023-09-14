@@ -6,19 +6,28 @@ branding:
 inputs:
   task-definition:
     description: 'The name of ECS task definition'
-    required: true
+    required: false
+  run-like-service:
+    description: 'The name of ECS service to emulate'
+    required: false
   cluster:
     description: "The name of the ECS cluster. Will default to the 'default' cluster"
-    required: true
+    required: false
+  command-override:
+    description: "This command overrides the default command from the Docker image or task definition"
+    required: false
+  container-name:
+    description: "The name of the container to receive overrides, only required when using command-override. "
+    required: false
   count:
     description: "The count of tasks to run. Will default to the 1"
     required: true
   subnets:
     description: "The subnets to allow this task to run in. Values should be comma separated without spaces"
-    required: true
+    required: false
   security-groups:
     description: "The security groups this task should run with. Values should be comma separated without spaces"
-    required: true
+    required: false
   started-by:
     description: "The value of the task started-by"
     required: false

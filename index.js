@@ -65,6 +65,10 @@ function cleanNullKeys(obj) {
   return JSON.parse(JSON.stringify(obj, emptyValueReplacer))
 }
 
+function parseCommandString(commandString) {
+  return commandString.split(' ')
+}
+
 function removeIgnoredAttributes(taskDef) {
   for (var attribute of IGNORED_TASK_DEFINITION_ATTRIBUTES) {
     if (taskDef[attribute]) {
@@ -88,39 +92,74 @@ async function run() {
     })
 
     // Get inputs
-    const taskDefinitionFile = core.getInput('task-definition', { required: true })
-    const cluster = core.getInput('cluster', { required: false })
+    const taskDefinitionFile = core.getInput('task-definition', { required: false })
+    const runLikeService = core.getInput('run-like-service', { required: false })
+    const clusterName = core.getInput('cluster', { required: false }) || 'default'
+    const commandOverride = core.getInput('command-override', { required: false })
     const count = core.getInput('count', { required: true })
     const startedBy = core.getInput('started-by', { required: false }) || agent
     const waitForFinish = core.getInput('wait-for-finish', { required: false }) || false
-    const subnets = core.getInput('subnets', { required: true })
-    const securityGroups = core.getInput('security-groups', { required: true })
+    const subnets = core.getInput('subnets', { required: false })
+    const securityGroups = core.getInput('security-groups', { required: false })
+    let containerName = core.getInput('container-name', { required: false }) || undefined
     let waitForMinutes = parseInt(core.getInput('wait-for-minutes', { required: false })) || 30
     if (waitForMinutes > MAX_WAIT_MINUTES) {
       waitForMinutes = MAX_WAIT_MINUTES
     }
 
-    // Register the task definition
-    core.debug('Registering the task definition')
-    const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
-      taskDefinitionFile :
-      path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile)
-    const fileContents = fs.readFileSync(taskDefPath, 'utf8')
-    const taskDefContents = removeIgnoredAttributes(cleanNullKeys(yaml.parse(fileContents)))
+    let taskDefArn
+    let taskSubnets
+    let taskSecurityGroups
 
-    let registerResponse
-    try {
-      registerResponse = await ecs.registerTaskDefinition(taskDefContents).promise()
-    } catch (error) {
-      core.setFailed('Failed to register task definition in ECS: ' + error.message)
-      core.debug('Task definition contents:')
-      core.debug(JSON.stringify(taskDefContents, undefined, 4))
-      throw(error)
+    if(!taskDefinitionFile && !runLikeService) {
+      core.setFailed('Either task-defintion or run-like-service is required. ')
     }
-    const taskDefArn = registerResponse.taskDefinition.taskDefinitionArn
-    core.setOutput('task-definition-arn', taskDefArn)
 
-    const clusterName = cluster ? cluster : 'default'
+    if(runLikeService) {
+      core.debug('Running this like a service')
+
+      const getServiceResponse = await ecs.describeServices({
+        cluster: clusterName,
+        services: [runLikeService]
+      }).promise()
+      core.debug(`Describe service response ${JSON.stringify(getServiceResponse)}`)
+
+      const service = getServiceResponse.services[0]
+      taskDefArn = service.taskDefinition
+      taskSubnets = service.networkConfiguration.awsvpcConfiguration.subnets
+      taskSecurityGroups = service.networkConfiguration.awsvpcConfiguration.securityGroups
+    }
+    else if(taskDefinitionFile) {
+      core.debug('Running this with a task definition')
+
+      if(!subnets || !securityGroups) {
+        core.setFailed('Must provide subnets and security-groups unless using run-like-service.')
+      }
+      taskSubnets = subnets.split(',')
+      taskSecurityGroups = securityGroups.split(',')
+
+      // Register the task definition
+      core.debug('Registering the task definition')
+      const taskDefPath = path.isAbsolute(taskDefinitionFile) ?
+        taskDefinitionFile :
+        path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile)
+      const fileContents = fs.readFileSync(taskDefPath, 'utf8')
+      const taskDefContents = removeIgnoredAttributes(cleanNullKeys(yaml.parse(fileContents)))
+
+
+      let registerResponse
+      try {
+        registerResponse = await ecs.registerTaskDefinition(taskDefContents).promise()
+      } catch (error) {
+        core.setFailed('Failed to register task definition in ECS: ' + error.message)
+        core.debug('Task definition contents:')
+        core.debug(JSON.stringify(taskDefContents, undefined, 4))
+        throw(error)
+      }
+      taskDefArn = registerResponse.taskDefinition.taskDefinitionArn
+      core.setOutput('task-definition-arn', taskDefArn)
+    }
+
 
     core.debug(`Running task with ${JSON.stringify({
       cluster: clusterName,
@@ -136,12 +175,19 @@ async function run() {
       networkConfiguration: {
         awsvpcConfiguration: {
           assignPublicIp: 'ENABLED',
-          subnets: subnets.split(','),
-          securityGroups: securityGroups.split(',')
-        }
+          subnets: taskSubnets,
+          securityGroups: taskSecurityGroups
+        },
       },
       count: count,
-      startedBy: startedBy
+      startedBy: startedBy,
+      ...(commandOverride && {
+        overrides: {
+          containerOverrides: [{
+            command: parseCommandString(commandOverride),
+            name: containerName
+          }]
+      }}),
     }).promise()
 
     core.debug(`Run task response ${JSON.stringify(runTaskResponse)}`)
