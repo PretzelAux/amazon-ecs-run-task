@@ -1,6 +1,6 @@
 {
   "name": "aws-actions-amazon-ecs-run-task",
-  "version": "1.3.5",
+  "version": "2.0.0",
   "description": "Registers an Amazon ECS task definition and run it as an ECS task.",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PretzelAux/amazon-ecs-run-task.git"
+    "url": "git+https://github.com/songtradr/amazon-ecs-run-task.git"
   },
   "keywords": [
     "AWS",
@@ -21,9 +21,9 @@
   "author": "AWS",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PretzelAux/amazon-ecs-run-task/issues"
+    "url": "https://github.com/songtradr/amazon-ecs-run-task/issues"
   },
-  "homepage": "https://github.com/PretzelAux/amazon-ecs-run-task#readme",
+  "homepage": "https://github.com/songtradr/amazon-ecs-run-task#readme",
   "dependencies": {
     "@actions/core": "^1.2.6",
     "aws-sdk": "^2.908.0",
