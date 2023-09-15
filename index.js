@@ -220,33 +220,23 @@ async function waitForTasksStopped(ecs, clusterName, taskArns, waitForMinutes) {
 
   core.debug('Waiting for tasks to stop')
 
-  let waitForTries = 0
-
-  while (waitForTries < 5) {
-    try {
-      waitForTries++;
-      const waitTaskResponse = await ecs.waitFor('tasksStopped', {
-        cluster: clusterName,
-        tasks: taskArns,
-        $waiter: {
-          delay: WAIT_DEFAULT_DELAY_SEC,
-          maxAttempts: maxAttempts
-        }
-      }).promise()
-
-      core.debug(`Run task response ${JSON.stringify(waitTaskResponse)}`)
-      break
-    } catch (e) {
-      if (waitForTries == 3) {
-        throw e;
+  ecs.waitFor('tasksStopped', {
+    cluster: clusterName,
+    tasks: taskArns,
+    $waiter: {
+      delay: WAIT_DEFAULT_DELAY_SEC,
+      maxAttempts: maxAttempts
+    },
+  }, (err, data) => {
+    if (err) {
+        throw err
       } else {
-        core.debug('Error trying to wait for task: ' + e.message);
-      }
+      core.debug(`Run task response ${JSON.stringify(data)}`)
     }
-  }
+  })
+}
 
   core.info(`All tasks have stopped. Watch progress in the Amazon ECS console: https://console.aws.amazon.com/ecs/home?region=${aws.config.region}#/clusters/${clusterName}/tasks`)
-}
 
 async function tasksExitCode(ecs, clusterName, taskArns) {
   const describeResponse = await ecs.describeTasks({
