@@ -234,9 +234,9 @@ async function waitForTasksStopped(ecs, clusterName, taskArns, waitForMinutes) {
       core.debug(`Run task response ${JSON.stringify(data)}`)
     }
   })
+  core.info(`All tasks have stopped. Watch progress in the Amazon ECS console: https://console.aws.amazon.com/ecs/home?region=${aws.config.region}#/clusters/${clusterName}/tasks`)
 }
 
-  core.info(`All tasks have stopped. Watch progress in the Amazon ECS console: https://console.aws.amazon.com/ecs/home?region=${aws.config.region}#/clusters/${clusterName}/tasks`)
 
 async function tasksExitCode(ecs, clusterName, taskArns) {
   const describeResponse = await ecs.describeTasks({
